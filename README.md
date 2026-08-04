@@ -72,3 +72,12 @@ the video player links ours instead.
 **Apple.** `subtitles-libass/build.gradle.kts` fetches a third-party XCFramework
 by digest today. Point `libassArchive` at our release and the cinterop is
 unchanged.
+
+## The web worker
+
+`scripts/build-wasm-worker.sh` links the wasm build into
+`nomercy-libass-worker.js` + `.wasm`, exporting the libass entry points the
+NoMercy wrapper's worker bridge calls and preloading the fallback face at
+`/fonts`. The wrapper in `packages/nomercy-subtitle-octopus` keeps its API; only
+the worker underneath it changes, so retiring SubtitlesOctopus is a three-file
+swap rather than a rewrite.

@@ -73,6 +73,13 @@ jobs:
             scripts/build-target.sh ${{ matrix.target }}
           fi
 
+      # A browser cannot load a static library. This links ours into the worker
+      # the web player already has a wrapper for, which is what retires the
+      # vendored SubtitlesOctopus build.
+      - name: wasm worker
+        if: matrix.target == 'wasm'
+        run: scripts/build-wasm-worker.sh
+
       # Packaged as the archive nomercy-player-core-kmp's NativeArchives already
       # resolves, so the desktop picks our build up with no code change at all.
       - name: package
