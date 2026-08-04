@@ -61,16 +61,16 @@ jobs:
           echo "NDK_BIN=$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_ENV"
 
       - name: fetch sources
-        run: scripts/fetch.sh
+        run: bash scripts/fetch.sh
 
       # Apple is an XCFramework of several slices rather than one library, so it
       # has its own script. Everything else is the same four meson builds.
       - name: build
         run: |
           if [ "${{ matrix.target }}" = "apple" ]; then
-            scripts/build-apple.sh
+            bash scripts/build-apple.sh
           else
-            scripts/build-target.sh ${{ matrix.target }}
+            bash scripts/build-target.sh ${{ matrix.target }}
           fi
 
       # A browser cannot load a static library. This links ours into the worker
@@ -78,13 +78,13 @@ jobs:
       # vendored SubtitlesOctopus build.
       - name: wasm worker
         if: matrix.target == 'wasm'
-        run: scripts/build-wasm-worker.sh
+        run: bash scripts/build-wasm-worker.sh
 
       # Packaged as the archive nomercy-player-core-kmp's NativeArchives already
       # resolves, so the desktop picks our build up with no code change at all.
       - name: package
         if: matrix.platform != ''
-        run: scripts/package.sh ${{ matrix.target }} ${{ matrix.platform }}
+        run: bash scripts/package.sh ${{ matrix.target }} ${{ matrix.platform }}
 
       - uses: actions/upload-artifact@v4
         with:
