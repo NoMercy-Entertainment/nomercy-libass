@@ -36,6 +36,19 @@ CROSS="$ROOT/cross/$TARGET.ini"
 [ -d "$SRC/libass" ] || { echo "run scripts/fetch.sh first" >&2; exit 2; }
 [ -f "$CROSS" ] || { echo "no cross file for $TARGET at $CROSS" >&2; exit 2; }
 
+# meson reads a cross file literally: "$NDK_BIN/aarch64-linux-android29-clang"
+# is the NAME of a compiler it then cannot find, not a path it expands. Every
+# Android job failed with "Unknown compiler(s)" on exactly that. So the file is
+# resolved into build/ with the environment substituted, and the checked-in one
+# stays readable with the variable in it.
+if grep -q '\$NDK_BIN' "$CROSS"; then
+    [ -n "${NDK_BIN:-}" ] || { echo "NDK_BIN is not set and $TARGET needs it" >&2; exit 2; }
+    mkdir -p "$ROOT/build/cross"
+    RESOLVED="$ROOT/build/cross/$TARGET.ini"
+    sed "s|\$NDK_BIN|$NDK_BIN|g" "$CROSS" > "$RESOLVED"
+    CROSS="$RESOLVED"
+fi
+
 mkdir -p "$OUT" "$PREFIX"
 export PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig"
 
