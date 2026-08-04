@@ -65,16 +65,15 @@ meson_build() {
         --cross-file "$CROSS" \
         --prefix "$PREFIX" \
         --pkg-config-path "$PREFIX/lib/pkgconfig" \
-        --default-library static \
         --buildtype release \
         "$@"
     meson compile -C "$OUT/$name"
     meson install -C "$OUT/$name"
 }
 
-meson_build freetype -Dharfbuzz=disabled -Dbrotli=disabled -Dbzip2=disabled -Dpng=disabled
-meson_build fribidi -Ddocs=false -Dbin=false
-meson_build harfbuzz -Dfreetype=enabled -Dglib=disabled -Dgobject=disabled -Dcairo=disabled -Dtests=disabled -Ddocs=disabled
+meson_build freetype -Ddefault_library=static -Dharfbuzz=disabled -Dbrotli=disabled -Dbzip2=disabled -Dpng=disabled
+meson_build fribidi -Ddefault_library=static -Ddocs=false -Dbin=false
+meson_build harfbuzz -Ddefault_library=static -Dfreetype=enabled -Dglib=disabled -Dgobject=disabled -Dcairo=disabled -Dtests=disabled -Ddocs=disabled
 meson_build libass -Ddefault_library=shared -Dfontconfig=disabled -Dasm=enabled
 
 echo "== built $TARGET -> $PREFIX"
