@@ -30,9 +30,18 @@ ar = 'ar'
 strip = 'strip'
 pkg-config = 'pkg-config'
 
+# C++ as well as C, or harfbuzz is built for the wrong platform.
+#
+# harfbuzz is the only C++ dependency here, and with these flags on c_args
+# alone clang++ compiled it for the host: "ld: building for 'iOS', but linking
+# in object file (libharfbuzz.a[hb-aat-layout.cc.o]) built for 'macOS'". A
+# Mach-O object carries the platform it was built for and the linker refuses
+# the mix outright.
 [built-in options]
 c_args = ['-arch', '$arch', '-isysroot', '$sysroot', '$minflag']
 c_link_args = ['-arch', '$arch', '-isysroot', '$sysroot', '$minflag']
+cpp_args = ['-arch', '$arch', '-isysroot', '$sysroot', '$minflag']
+cpp_link_args = ['-arch', '$arch', '-isysroot', '$sysroot', '$minflag']
 
 [host_machine]
 system = 'darwin'

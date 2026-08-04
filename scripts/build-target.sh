@@ -120,11 +120,35 @@ esac
 # support shared libraries". build-wasm-worker.sh links the archives into the
 # worker itself, which is the artifact the web actually loads.
 case "$TARGET" in
-    wasm) libass_linkage=static ;;
+    # Apple ships an XCFramework of static slices — cinterop links libass into
+    # the app rather than loading it — and a browser cannot dlopen anything.
+    wasm|apple-*) libass_linkage=static ;;
     *) libass_linkage=shared ;;
 esac
 
-meson_build libass -Ddefault_library="$libass_linkage" -Dfontconfig=disabled -Dasm="$asm" -Drequire-system-font-provider=false
+# CoreText off with the rest of them.
+#
+# libass enables it by default on Apple, which would let a font the manifest
+# never named resolve to whatever the device happens to have — the one platform
+# quietly disagreeing with the other six about which typeface a sign is drawn
+# in, reported by nothing.
+case "$TARGET" in
+    apple-*) providers="-Dcoretext=disabled" ;;
+    *) providers="" ;;
+esac
+
+# PIE off, because nasm cannot produce it.
+#
+# Android defaults b_pie true and meson then refuses outright: "Language Nasm
+# does not support position-independent executable". Nothing here is an
+# executable — b_staticpic already gives the shared library its relocatable
+# code — so this costs nothing and only android-x86_64 assembles through nasm.
+case "$TARGET" in
+    android-*) pie="-Db_pie=false" ;;
+    *) pie="" ;;
+esac
+
+meson_build libass -Ddefault_library="$libass_linkage" -Dfontconfig=disabled -Dasm="$asm" -Drequire-system-font-provider=false $providers $pie
 
 echo "== built $TARGET -> $PREFIX"
 find "$PREFIX/lib" -maxdepth 1 -name 'libass*' -print

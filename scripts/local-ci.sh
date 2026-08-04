@@ -43,10 +43,34 @@ fi
 # directory whose files are stamped in the future: "Clock skew detected. File
 # coredata.dat has a time stamp 0.02s in the future." Nothing about the build is
 # wrong; the two clocks simply disagree by milliseconds.
+# The NDK, fetched once into build/ and kept there.
+#
+# An Android target needs a Linux-host NDK, and a Windows SDK install has no
+# linux-x86_64 prebuilt in it. Without this the three Android targets could only
+# ever be checked by dispatching CI, which is the habit local-ci.sh exists to
+# break. One download makes them local like every other target.
+NDK_VERSION=r27c
+NDK_HOME="build/ndk/android-ndk-$NDK_VERSION"
+NDK_ENV=""
+
+case "$TARGET" in
+    android-*)
+        if [ ! -d "$ROOT/$NDK_HOME" ]; then
+            echo "== fetching android ndk $NDK_VERSION"
+            mkdir -p "$ROOT/build/ndk"
+            docker run --rm -v "$WINROOT":/mnt/work "$IMAGE" bash -lc \
+                "apt-get update -qq >/dev/null 2>&1 && apt-get install -y -qq unzip >/dev/null 2>&1 \
+                 && curl -fsSL -o /tmp/ndk.zip https://dl.google.com/android/repository/android-ndk-$NDK_VERSION-linux.zip \
+                 && unzip -q /tmp/ndk.zip -d /mnt/work/build/ndk"
+        fi
+        NDK_ENV="export NDK_BIN=/build/$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin;"
+        ;;
+esac
+
 docker run --rm \
     -v "$WINROOT":/mnt/work \
     "$IMAGE" \
-    bash -lc "cp -r /mnt/work /build && cd /build \
-        && scripts/fetch.sh && scripts/build-target.sh $TARGET \
+    bash -lc "cp -r /mnt/work /build && cd /build && $NDK_ENV \
+        scripts/fetch.sh && scripts/build-target.sh $TARGET \
         && mkdir -p /mnt/work/build/prefix \
         && cp -r /build/build/prefix/$TARGET /mnt/work/build/prefix/"
