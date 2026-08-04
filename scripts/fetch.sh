@@ -34,7 +34,12 @@ digest() {
 # is a corrupted cache or a moved tag, and both are worth stopping for.
 fetch() {
     local name="$1" version="$2" want="$3" url="$4"
-    local file="$SRC/$name-$version.tar.gz"
+    # The extension comes from the URL, not from an assumption: libass and
+    # freetype ship .tar.gz, fribidi and harfbuzz ship .tar.xz, and hardcoding
+    # gzip made tar fail on half the sources with "not in gzip format".
+    local ext="tar.gz"
+    case "$url" in *.tar.xz) ext="tar.xz" ;; esac
+    local file="$SRC/$name-$version.$ext"
 
     if [ ! -f "$file" ]; then
         echo "== fetch $name $version"
@@ -53,7 +58,7 @@ fetch() {
 
     rm -rf "$SRC/$name"
     mkdir -p "$SRC/$name"
-    tar -xzf "$file" -C "$SRC/$name" --strip-components=1
+    tar -xf "$file" -C "$SRC/$name" --strip-components=1
     echo "== ok $name $version"
 }
 
@@ -61,7 +66,7 @@ fetch libass "$LIBASS_VERSION" "$LIBASS_SHA256" \
     "https://github.com/libass/libass/releases/download/$LIBASS_VERSION/libass-$LIBASS_VERSION.tar.gz"
 
 fetch freetype "$FREETYPE_VERSION" "$FREETYPE_SHA256" \
-    "https://download.savannah.gnu.org/releases/freetype/freetype-$FREETYPE_VERSION.tar.gz"
+    "https://github.com/freetype/freetype/archive/refs/tags/VER-2-13-3.tar.gz"
 
 fetch fribidi "$FRIBIDI_VERSION" "$FRIBIDI_SHA256" \
     "https://github.com/fribidi/fribidi/releases/download/v$FRIBIDI_VERSION/fribidi-$FRIBIDI_VERSION.tar.xz"
