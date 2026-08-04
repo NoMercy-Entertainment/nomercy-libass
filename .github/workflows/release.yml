@@ -1,0 +1,89 @@
+name: release
+
+# Every surface's libass, built from one set of pinned sources, in one run.
+#
+# The reason this is a matrix in CI rather than a script somebody runs: a
+# library whose features depend on what the builder happened to have installed
+# behaves differently for every user. Before this repo the desktop had no libass
+# at all, Android took a third-party binding, Apple took a prebuilt archive and
+# the web carried a vendored JavaScript port — four origins, four ways to fall
+# short.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-x86-64
+            runner: ubuntu-latest
+          - target: windows-x86-64
+            runner: ubuntu-latest
+            packages: mingw-w64
+          - target: android-arm64-v8a
+            runner: ubuntu-latest
+            ndk: true
+          - target: android-armeabi-v7a
+            runner: ubuntu-latest
+            ndk: true
+          - target: android-x86_64
+            runner: ubuntu-latest
+            ndk: true
+          - target: wasm
+            runner: ubuntu-latest
+            emsdk: true
+          - target: apple
+            runner: macos-latest
+            apple: true
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: toolchain
+        run: |
+          sudo apt-get update -y || true
+          sudo apt-get install -y meson ninja-build nasm ${{ matrix.packages }} || \
+            brew install meson ninja nasm
+
+      - name: emsdk
+        if: matrix.emsdk
+        uses: mymindstorm/setup-emsdk@v14
+
+      - name: ndk
+        if: matrix.ndk
+        run: |
+          echo "NDK_BIN=$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_ENV"
+
+      - name: fetch sources
+        run: scripts/fetch.sh
+
+      # Apple is an XCFramework of several slices rather than one library, so it
+      # has its own script. Everything else is the same four meson builds.
+      - name: build
+        run: |
+          if [ "${{ matrix.target }}" = "apple" ]; then
+            scripts/build-apple.sh
+          else
+            scripts/build-target.sh ${{ matrix.target }}
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: libass-${{ matrix.target }}
+          path: build/prefix/${{ matrix.target }}/lib/
+
+  # One release carrying every surface, so a consumer cannot pick up a desktop
+  # build from one version and an Android build from another.
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: 'libass-*/**'
+          fail_on_unmatched_files: true
