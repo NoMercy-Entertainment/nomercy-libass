@@ -37,8 +37,16 @@ if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
     (cd "$ROOT" && docker build -t "$IMAGE" -f scripts/Dockerfile.build .)
 fi
 
+# Built in the container's own filesystem, then copied back.
+#
+# A Windows bind mount carries the host's clock, and meson refuses a build
+# directory whose files are stamped in the future: "Clock skew detected. File
+# coredata.dat has a time stamp 0.02s in the future." Nothing about the build is
+# wrong; the two clocks simply disagree by milliseconds.
 docker run --rm \
-    -v "$WINROOT":/work \
-    -w /work \
+    -v "$WINROOT":/mnt/work \
     "$IMAGE" \
-    bash -lc "scripts/fetch.sh && scripts/build-target.sh $TARGET"
+    bash -lc "cp -r /mnt/work /build && cd /build \
+        && scripts/fetch.sh && scripts/build-target.sh $TARGET \
+        && mkdir -p /mnt/work/build/prefix \
+        && cp -r /build/build/prefix/$TARGET /mnt/work/build/prefix/"

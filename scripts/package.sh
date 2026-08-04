@@ -38,10 +38,21 @@ mkdir -p "$STAGE" "$DIST"
 # libass.so.9 or libass.dylib directly inside the payload directory — a nested
 # lib/ would resolve to nothing with no error, which is the silent-miss this
 # whole repo exists to remove.
-find "$PREFIX/lib" -maxdepth 1 \( -name 'libass*.dll' -o -name 'libass.so*' -o -name 'libass*.dylib' \) \
+# bin/ as well as lib/, because a mingw target puts the DLL in bin.
+#
+# Only the import library (libass.dll.a) lands in lib/, and packaging that would
+# ship an archive with no runtime in it: the desktop would look for libass-9.dll,
+# find nothing, and report libass as not installed on a machine that had just
+# downloaded it.
+# Only the directories that exist: every target other than Windows has no bin,
+# and find takes a missing path as an error rather than as nothing to search.
+SEARCH=("$PREFIX/lib")
+[ -d "$PREFIX/bin" ] && SEARCH+=("$PREFIX/bin")
+
+find "${SEARCH[@]}" -maxdepth 1 \( -name 'libass*.dll' -o -name 'libass.so*' -o -name 'libass*.dylib' \) \
     -exec cp -P {} "$STAGE/" \;
 
-[ -n "$(ls -A "$STAGE")" ] || { echo "no libass shared library in $PREFIX/lib" >&2; exit 1; }
+[ -n "$(ls -A "$STAGE")" ] || { echo "no libass shared library in $PREFIX/lib or $PREFIX/bin" >&2; exit 1; }
 
 ARCHIVE="$DIST/libass-$LIBASS_VERSION-$PLATFORM.tar.gz"
 tar -czf "$ARCHIVE" -C "$STAGE" .

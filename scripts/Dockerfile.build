@@ -17,5 +17,19 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
         meson ninja-build nasm pkg-config \
         build-essential curl ca-certificates xz-utils \
-        mingw-w64 emscripten python3 \
+        mingw-w64 python3 nodejs git \
     && rm -rf /var/lib/apt/lists/*
+
+# emsdk, not the distro's emscripten.
+#
+# apt ships 3.1.6 with a read-only cache, and its sanity check fails before any
+# of our code compiles: "Executables created by c compiler emcc are not
+# runnable". CI uses setup-emsdk, so taking the distro package here would mean
+# local and CI ran different compilers — which is the drift this repo exists to
+# end, reproduced inside its own tooling.
+RUN git clone --depth 1 https://github.com/emscripten-core/emsdk.git /opt/emsdk \
+    && /opt/emsdk/emsdk install latest \
+    && /opt/emsdk/emsdk activate latest
+
+ENV PATH="/opt/emsdk:/opt/emsdk/upstream/emscripten:/opt/emsdk/node/*/bin:${PATH}"
+ENV EM_CACHE=/tmp/emcache

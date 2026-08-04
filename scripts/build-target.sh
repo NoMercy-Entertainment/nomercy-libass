@@ -73,16 +73,23 @@ meson_build() {
     meson install -C "$OUT/$name"
 }
 
-meson_build freetype -Ddefault_library=static -Dwerror=false -Dharfbuzz=disabled -Dbrotli=disabled -Dbzip2=disabled -Dpng=disabled
-meson_build fribidi -Ddefault_library=static -Dwerror=false -Ddocs=false -Dbin=false
-# --werror off for the dependencies, on nothing of ours.
+# freetype's own zlib, not the host's.
 #
-# harfbuzz builds with warnings-as-errors and newer clang added
-# -Wunused-template, so hb-meta.hh fails on code upstream ships and considers
-# fine. Treating a third party's warnings as our build gate means our pinned
-# version stops building the day a runner's compiler updates — which is the
-# opposite of the reproducibility this repo exists for.
-meson_build harfbuzz -Ddefault_library=static -Dwerror=false -Dfreetype=enabled -Dglib=disabled -Dgobject=disabled -Dcairo=disabled -Dtests=disabled -Ddocs=disabled
+# gzip support needs zlib.h, and on a runner that has one this quietly linked
+# whatever the machine happened to provide — the exact drift this repo exists to
+# end. mingw has none, so the Windows cross was the target that said so out
+# loud. `internal` builds the copy freetype ships, identically on all seven.
+meson_build freetype -Ddefault_library=static -Dwerror=false -Dzlib=internal -Dharfbuzz=disabled -Dbrotli=disabled -Dbzip2=disabled -Dpng=disabled
+meson_build fribidi -Ddefault_library=static -Dwerror=false -Ddocs=false -Dbin=false
+# harfbuzz promotes its own warnings, so werror is not the lever.
+#
+# hb.hh carries a block of `#pragma GCC diagnostic error` guarded by
+# HB_NO_PRAGMA_GCC_DIAGNOSTIC_ERROR, so a newer clang adding -Wunused-template
+# fails the build no matter what meson's werror says. Defining the guard is what
+# actually stops our pinned version breaking the day a toolchain updates, which
+# is the reproducibility this repo exists for. Nothing of ours compiles here, so
+# no warning of ours is silenced.
+meson_build harfbuzz -Ddefault_library=static -Dwerror=false -Dcpp_args=-DHB_NO_PRAGMA_GCC_DIAGNOSTIC_ERROR -Dfreetype=enabled -Dglib=disabled -Dgobject=disabled -Dcairo=disabled -Dtests=disabled -Ddocs=disabled
 # No system font provider, and that is deliberate rather than a concession.
 #
 # libass insists on DirectWrite, Core Text or Fontconfig unless told otherwise,
@@ -107,7 +114,17 @@ case " $ASM_TARGETS " in
     *) asm=disabled ;;
 esac
 
-meson_build libass -Ddefault_library=shared -Dfontconfig=disabled -Dasm="$asm"     -Drequire-system-font-provider=false
+# Static for wasm, shared everywhere else.
+#
+# A browser cannot dlopen anything and ld.wasm says so outright — "does not
+# support shared libraries". build-wasm-worker.sh links the archives into the
+# worker itself, which is the artifact the web actually loads.
+case "$TARGET" in
+    wasm) libass_linkage=static ;;
+    *) libass_linkage=shared ;;
+esac
+
+meson_build libass -Ddefault_library="$libass_linkage" -Dfontconfig=disabled -Dasm="$asm" -Drequire-system-font-provider=false
 
 echo "== built $TARGET -> $PREFIX"
 find "$PREFIX/lib" -maxdepth 1 -name 'libass*' -print
