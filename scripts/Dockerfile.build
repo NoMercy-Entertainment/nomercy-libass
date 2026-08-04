@@ -1,0 +1,21 @@
+# -----------------------------------------------------------------------------
+#  Copyright (c) NoMercy Entertainment
+#
+#  Licensed under the Apache License, Version 2.0. See LICENSE for details.
+#
+#  SPDX-License-Identifier: Apache-2.0
+# -----------------------------------------------------------------------------
+#
+# The release runner's toolchain, pinned to the same ubuntu the matrix uses, so
+# a build that passes here passes there. Every package in this list is one the
+# workflow installs; adding one here without adding it there would make local
+# green mean nothing.
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+        meson ninja-build nasm pkg-config \
+        build-essential curl ca-certificates xz-utils \
+        mingw-w64 emscripten python3 \
+    && rm -rf /var/lib/apt/lists/*
