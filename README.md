@@ -81,3 +81,15 @@ NoMercy wrapper's worker bridge calls and preloading the fallback face at
 `/fonts`. The wrapper in `packages/nomercy-subtitle-octopus` keeps its API; only
 the worker underneath it changes, so retiring SubtitlesOctopus is a three-file
 swap rather than a rewrite.
+
+## Acceptance fixture
+
+**No Game No Life.** Its subtitles are the test worth passing: karaoke timing,
+positioned signs, per-style fonts and colours, rotated and faded typesetting.
+A renderer that draws Latin dialogue correctly can still fail every one of those
+and look fine to anyone not reading the screen carefully — which is exactly the
+class of failure four separate libass builds hid.
+
+Correctness is judged on that episode, on every surface, against the same frame:
+web, desktop, Android and Apple showing the same sign in the same place with the
+same face.
