@@ -73,8 +73,8 @@ meson_build() {
     meson install -C "$OUT/$name"
 }
 
-meson_build freetype -Ddefault_library=static --werror=false -Dharfbuzz=disabled -Dbrotli=disabled -Dbzip2=disabled -Dpng=disabled
-meson_build fribidi -Ddefault_library=static --werror=false -Ddocs=false -Dbin=false
+meson_build freetype -Ddefault_library=static -Dwerror=false -Dharfbuzz=disabled -Dbrotli=disabled -Dbzip2=disabled -Dpng=disabled
+meson_build fribidi -Ddefault_library=static -Dwerror=false -Ddocs=false -Dbin=false
 # --werror off for the dependencies, on nothing of ours.
 #
 # harfbuzz builds with warnings-as-errors and newer clang added
@@ -82,7 +82,7 @@ meson_build fribidi -Ddefault_library=static --werror=false -Ddocs=false -Dbin=f
 # fine. Treating a third party's warnings as our build gate means our pinned
 # version stops building the day a runner's compiler updates — which is the
 # opposite of the reproducibility this repo exists for.
-meson_build harfbuzz -Ddefault_library=static --werror=false -Dfreetype=enabled -Dglib=disabled -Dgobject=disabled -Dcairo=disabled -Dtests=disabled -Ddocs=disabled
+meson_build harfbuzz -Ddefault_library=static -Dwerror=false -Dfreetype=enabled -Dglib=disabled -Dgobject=disabled -Dcairo=disabled -Dtests=disabled -Ddocs=disabled
 # No system font provider, and that is deliberate rather than a concession.
 #
 # libass insists on DirectWrite, Core Text or Fontconfig unless told otherwise,
