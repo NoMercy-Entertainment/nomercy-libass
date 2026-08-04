@@ -48,3 +48,27 @@ The entry cap and the MB cap are independent and both matter: 16 MB with a
 1 500-entry cap measured 1 834 ms average dynamic render because the count limit
 evicted before the MB budget was reached and every evicted glyph was
 re-rasterized. 16 MB / 4 000 returns it to ~400 ms.
+
+## Wiring the consumers
+
+**Desktop — done.** `scripts/package.sh` emits
+`libass-<version>-<platform>.tar.gz` flat, which is exactly what
+`nomercy-player-core-kmp`'s `NativeArchives` resolves and what
+`AssRenderers.jvm` searches. No player change is needed; publishing the artifact
+is the whole integration.
+
+**Android — one swap left.** `AndroidAssRenderer` is written against
+`io.github.peerless2012:ass-kt`'s JNI wrapper, while the desktop drives libass
+through our own JNA interface in `subtitles-libass/src/jvmMain/.../LibAss.kt`.
+JNA runs on Android, so the swap is to move `LibAss.kt` to a source set both
+share and rewrite `AndroidAssRenderer` against it, loading our `.so` from the
+APK's `jniLibs`. That deletes `ass-kt` from `gradle/libs.versions.toml` and
+leaves one renderer implementation instead of two.
+
+**Web — the wasm target.** `packages/nomercy-subtitle-octopus` and the vendored
+`public/js/octopus/subtitles-octopus.js` go once the wasm artifact publishes;
+the video player links ours instead.
+
+**Apple.** `subtitles-libass/build.gradle.kts` fetches a third-party XCFramework
+by digest today. Point `libassArchive` at our release and the cinterop is
+unchanged.
