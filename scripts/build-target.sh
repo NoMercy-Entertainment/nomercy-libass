@@ -49,6 +49,8 @@ if grep -q '\$NDK_BIN' "$CROSS"; then
     CROSS="$RESOLVED"
 fi
 
+ASM_TARGETS="linux-x86-64 android-arm64-v8a android-x86_64"
+
 mkdir -p "$OUT" "$PREFIX"
 export PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig"
 
@@ -84,7 +86,21 @@ meson_build harfbuzz -Ddefault_library=static -Dfreetype=enabled -Dglib=disabled
 # resolve to whatever the machine happens to have, which renders the wrong
 # typeface and reports nothing — the failure that is invisible until somebody
 # who knows the show looks at it.
-meson_build libass -Ddefault_library=shared -Dfontconfig=disabled -Dasm=enabled     -Drequire-system-font-provider=false
+# Assembly where the toolchain can actually assemble it.
+#
+# arm64 Android built with -Dasm=enabled and every other target stopped at
+# "Assembly was requested, but cannot be built": nasm on the runner does not
+# serve armv7, wasm or a mingw cross, and libass turns a request it cannot
+# honour into a hard failure rather than a fallback. ASM_TARGETS is the list
+# that has been shown to build it; everything else takes the C path, which is
+# slower per frame and correct, and RenderScheduler already keeps a static cue
+# from being redrawn at all.
+case " $ASM_TARGETS " in
+    *" $TARGET "*) asm=enabled ;;
+    *) asm=disabled ;;
+esac
+
+meson_build libass -Ddefault_library=shared -Dfontconfig=disabled -Dasm="$asm"     -Drequire-system-font-provider=false
 
 echo "== built $TARGET -> $PREFIX"
 find "$PREFIX/lib" -maxdepth 1 -name 'libass*' -print
