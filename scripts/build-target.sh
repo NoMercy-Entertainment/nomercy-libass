@@ -49,7 +49,7 @@ if grep -q '\$NDK_BIN' "$CROSS"; then
     CROSS="$RESOLVED"
 fi
 
-ASM_TARGETS="linux-x86-64 windows-x86-64 android-arm64-v8a android-x86_64"
+ASM_TARGETS="linux-x86-64 windows-x86-64 android-arm64-v8a"
 
 mkdir -p "$OUT" "$PREFIX"
 export PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig"
@@ -105,8 +105,12 @@ meson_build harfbuzz -Ddefault_library=static -Dwerror=false -Dcpp_args=-DHB_NO_
 # x86 needs nasm, and nasm has to be named in the cross file: a cross build
 # resolves binaries from that file alone, so an installed nasm is still "not
 # found for the host machine". arm64 assembles through the NDK's own clang and
-# needs nothing declared. armeabi-v7a and wasm have no assembly path in libass
-# at all, and libass turns a request it cannot honour into a hard failure rather
+# needs nothing declared.
+#
+# android-x86_64 is the exception: Android mandates position-independent code
+# and meson's Nasm compiler refuses it outright — "Language Nasm does not
+# support position-independent executable" — with b_pie already false. armeabi-v7a
+# and wasm have no assembly path in libass at all, and libass turns a request it cannot honour into a hard failure rather
 # than a fallback, so they take the C path — slower per frame and identical in
 # output, with RenderScheduler already keeping a static cue from being redrawn.
 case " $ASM_TARGETS " in
@@ -137,18 +141,7 @@ case "$TARGET" in
     *) providers="" ;;
 esac
 
-# PIE off, because nasm cannot produce it.
-#
-# Android defaults b_pie true and meson then refuses outright: "Language Nasm
-# does not support position-independent executable". Nothing here is an
-# executable — b_staticpic already gives the shared library its relocatable
-# code — so this costs nothing and only android-x86_64 assembles through nasm.
-case "$TARGET" in
-    android-*) pie="-Db_pie=false" ;;
-    *) pie="" ;;
-esac
-
-meson_build libass -Ddefault_library="$libass_linkage" -Dfontconfig=disabled -Dasm="$asm" -Drequire-system-font-provider=false $providers $pie
+meson_build libass -Ddefault_library="$libass_linkage" -Dfontconfig=disabled -Dasm="$asm" -Drequire-system-font-provider=false $providers
 
 echo "== built $TARGET -> $PREFIX"
 find "$PREFIX/lib" -maxdepth 1 -name 'libass*' -print

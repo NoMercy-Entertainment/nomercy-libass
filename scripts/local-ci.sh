@@ -61,7 +61,8 @@ case "$TARGET" in
             docker run --rm -v "$WINROOT":/mnt/work "$IMAGE" bash -lc \
                 "apt-get update -qq >/dev/null 2>&1 && apt-get install -y -qq unzip >/dev/null 2>&1 \
                  && curl -fsSL -o /tmp/ndk.zip https://dl.google.com/android/repository/android-ndk-$NDK_VERSION-linux.zip \
-                 && unzip -q /tmp/ndk.zip -d /mnt/work/build/ndk"
+                 && rm -rf /mnt/work/build/ndk/android-ndk-$NDK_VERSION \
+                 && unzip -qo /tmp/ndk.zip -d /mnt/work/build/ndk"
         fi
         NDK_ENV="export NDK_BIN=/build/$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin;"
         ;;

@@ -47,7 +47,9 @@ emcc \
     -s ENVIRONMENT=worker \
     -s ALLOW_MEMORY_GROWTH=1 \
     -s EXPORTED_FUNCTIONS="$EXPORTS" \
-    -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap","HEAPU8","FS"]' \
+    -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap","HEAPU8","HEAPU32","HEAP32","FS"]' \
+    -s OFFSCREENCANVAS_SUPPORT=1 \
+    --extern-post-js "$ROOT/src/worker-glue.js" \
     --preload-file "$ROOT/fonts@/fonts" \
     -o "$DIST/nomercy-libass-worker.js"
 
