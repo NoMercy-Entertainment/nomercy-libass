@@ -64,6 +64,7 @@ meson_build() {
     meson setup "$OUT/$name" "$SRC/$name" \
         --cross-file "$CROSS" \
         --prefix "$PREFIX" \
+        --pkg-config-path "$PREFIX/lib/pkgconfig" \
         --default-library static \
         --buildtype release \
         "$@"
