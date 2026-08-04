@@ -74,7 +74,17 @@ meson_build() {
 meson_build freetype -Ddefault_library=static -Dharfbuzz=disabled -Dbrotli=disabled -Dbzip2=disabled -Dpng=disabled
 meson_build fribidi -Ddefault_library=static -Ddocs=false -Dbin=false
 meson_build harfbuzz -Ddefault_library=static -Dfreetype=enabled -Dglib=disabled -Dgobject=disabled -Dcairo=disabled -Dtests=disabled -Ddocs=disabled
-meson_build libass -Ddefault_library=shared -Dfontconfig=disabled -Dasm=enabled
+# No system font provider, and that is deliberate rather than a concession.
+#
+# libass insists on DirectWrite, Core Text or Fontconfig unless told otherwise,
+# because a player that only renders fonts embedded in the subtitle is unusual.
+# Ours is exactly that: SubtitlePlugin fetches every face the .ass names from
+# the item's font manifest and hands them over with ass_add_font before the
+# track loads. Linking a system provider would let a missing manifest entry
+# resolve to whatever the machine happens to have, which renders the wrong
+# typeface and reports nothing — the failure that is invisible until somebody
+# who knows the show looks at it.
+meson_build libass -Ddefault_library=shared -Dfontconfig=disabled -Dasm=enabled     -Drequire-system-font-provider=false
 
 echo "== built $TARGET -> $PREFIX"
 find "$PREFIX/lib" -maxdepth 1 -name 'libass*' -print
