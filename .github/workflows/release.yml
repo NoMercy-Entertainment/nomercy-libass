@@ -29,18 +29,23 @@ jobs:
           - target: android-arm64-v8a
             runner: ubuntu-latest
             ndk: true
+            platform: android-arm64-v8a
           - target: android-armeabi-v7a
             runner: ubuntu-latest
             ndk: true
+            platform: android-armeabi-v7a
           - target: android-x86_64
             runner: ubuntu-latest
             ndk: true
+            platform: android-x86_64
           - target: wasm
             runner: ubuntu-latest
             emsdk: true
+            platform: wasm
           - target: apple
             runner: macos-latest
             apple: true
+            platform: apple
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -82,16 +87,18 @@ jobs:
 
       # Packaged as the archive nomercy-player-core-kmp's NativeArchives already
       # resolves, so the desktop picks our build up with no code change at all.
+      # Every target, not only the two that had a platform id. Android, Apple
+      # and wasm produced real payloads and shipped none of them, because this
+      # step was gated on a field only linux and windows carried.
       - name: package
-        if: matrix.platform != ''
         run: bash scripts/package.sh ${{ matrix.target }} ${{ matrix.platform }}
 
+      # The archive only. Uploading the prefix tree as well is what made the
+      # release collide on the first header two targets had in common.
       - uses: actions/upload-artifact@v4
         with:
           name: libass-${{ matrix.target }}
-          path: |
-            build/dist/
-            build/prefix/${{ matrix.target }}/lib/
+          path: build/dist/*.tar.gz
 
   # One release carrying every surface, so a consumer cannot pick up a desktop
   # build from one version and an Android build from another.
@@ -107,5 +114,5 @@ jobs:
       - uses: actions/download-artifact@v4
       - uses: softprops/action-gh-release@v2
         with:
-          files: 'libass-*/**'
+          files: 'libass-*/*.tar.gz'
           fail_on_unmatched_files: true

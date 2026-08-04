@@ -29,30 +29,51 @@ PREFIX="$ROOT/build/prefix/$TARGET"
 STAGE="$ROOT/build/stage/$PLATFORM"
 DIST="$ROOT/build/dist"
 
-[ -d "$PREFIX/lib" ] || { echo "nothing built for $TARGET" >&2; exit 2; }
-
 rm -rf "$STAGE"
 mkdir -p "$STAGE" "$DIST"
 
-# Flat, and only the shared library. AssRenderers.jvm looks for libass-9.dll,
-# libass.so.9 or libass.dylib directly inside the payload directory — a nested
-# lib/ would resolve to nothing with no error, which is the silent-miss this
-# whole repo exists to remove.
-# bin/ as well as lib/, because a mingw target puts the DLL in bin.
+# Every target ships one archive, and only its payload.
 #
-# Only the import library (libass.dll.a) lands in lib/, and packaging that would
-# ship an archive with no runtime in it: the desktop would look for libass-9.dll,
-# find nothing, and report libass as not installed on a machine that had just
-# downloaded it.
-# Only the directories that exist: every target other than Windows has no bin,
-# and find takes a missing path as an error rather than as nothing to search.
-SEARCH=("$PREFIX/lib")
-[ -d "$PREFIX/bin" ] && SEARCH+=("$PREFIX/bin")
+# The publish job uploaded the raw prefix trees and collided on the first header
+# two targets had in common: "Uploading fterrors.h..." twice, and the release
+# failed after seven green builds. A consumer wants the thing it loads, not the
+# headers it was compiled against.
+case "$TARGET" in
+    apple)
+        # An XCFramework is a directory, so it goes in whole. cinterop links
+        # against the slice for the platform it is building.
+        [ -d "$PREFIX/lib/libass.xcframework" ] || { echo "no xcframework for $TARGET" >&2; exit 1; }
+        cp -R "$PREFIX/lib/libass.xcframework" "$STAGE/"
+        ;;
 
-find "${SEARCH[@]}" -maxdepth 1 \( -name 'libass*.dll' -o -name 'libass.so*' -o -name 'libass*.dylib' \) \
-    -exec cp -P {} "$STAGE/" \;
+    wasm)
+        # The worker, its wasm and the preloaded font. A browser loads all three
+        # and the .js resolves the other two by name beside it.
+        for part in js wasm data; do
+            cp "$ROOT/build/dist/wasm/nomercy-libass-worker.$part" "$STAGE/"
+        done
+        ;;
 
-[ -n "$(ls -A "$STAGE")" ] || { echo "no libass shared library in $PREFIX/lib or $PREFIX/bin" >&2; exit 1; }
+    *)
+        # Flat, and only the shared library. AssRenderers.jvm looks for
+        # libass-9.dll, libass.so.9 or libass.dylib directly inside the payload
+        # directory — a nested lib/ would resolve to nothing with no error,
+        # which is the silent-miss this whole repo exists to remove.
+        #
+        # bin/ as well as lib/, because a mingw target leaves only the import
+        # library in lib/ and puts the DLL in bin. Packaging the import library
+        # would ship an archive with no runtime in it, and the desktop would
+        # report libass missing on a machine that had just downloaded it. Every
+        # other target has no bin, and find takes a missing path as an error.
+        [ -d "$PREFIX/lib" ] || { echo "nothing built for $TARGET" >&2; exit 2; }
+        SEARCH=("$PREFIX/lib")
+        [ -d "$PREFIX/bin" ] && SEARCH+=("$PREFIX/bin")
+
+        find "${SEARCH[@]}" -maxdepth 1 \( -name 'libass*.dll' -o -name 'libass.so*' -o -name 'libass*.dylib' \)             -exec cp -P {} "$STAGE/" \;
+        ;;
+esac
+
+[ -n "$(ls -A "$STAGE")" ] || { echo "nothing to package for $TARGET" >&2; exit 1; }
 
 ARCHIVE="$DIST/libass-$LIBASS_VERSION-$PLATFORM.tar.gz"
 tar -czf "$ARCHIVE" -C "$STAGE" .
