@@ -75,7 +75,11 @@ esac
 
 [ -n "$(ls -A "$STAGE")" ] || { echo "nothing to package for $TARGET" >&2; exit 1; }
 
-ARCHIVE="$DIST/libass-$LIBASS_VERSION-$PLATFORM.tar.gz"
+# The payload version, which carries the revision. Core resolves
+# `libass-<version>-<platform>.tar.gz` under the tag `v<version>`, so the
+# archive name and the tag move together and an older payload stays exactly
+# where it was published.
+ARCHIVE="$DIST/libass-$LIBASS_PAYLOAD_VERSION-$PLATFORM.tar.gz"
 tar -czf "$ARCHIVE" -C "$STAGE" .
 
 echo "== packaged $PLATFORM"

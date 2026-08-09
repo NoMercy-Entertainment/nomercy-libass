@@ -111,6 +111,28 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      # The tag and the archives have to name the same payload.
+      #
+      # A consumer resolves `libass-<version>-<platform>.tar.gz` under the tag
+      # `v<version>`; the two are built from different places -- the tag from
+      # whoever pushed it, the names from versions.env -- and a mismatch
+      # publishes a release whose every asset 404s at the URL anything actually
+      # asks for. Cheaper to fail here than to find out from a desktop that
+      # says libass is not installed.
+      - name: The tag names the payload the archives carry
+        run: |
+          set -e
+          . ./versions.env
+          expected="v$LIBASS_PAYLOAD_VERSION"
+          actual="${GITHUB_REF_NAME}"
+          if [ "$expected" != "$actual" ]; then
+            echo "tag $actual does not match versions.env, which builds $expected" >&2
+            exit 1
+          fi
+          echo "tag and payload agree: $actual"
+
       - uses: actions/download-artifact@v4
       - uses: softprops/action-gh-release@v2
         with:
