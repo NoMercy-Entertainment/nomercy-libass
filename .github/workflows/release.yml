@@ -20,33 +20,35 @@ jobs:
       matrix:
         include:
           - target: linux-x86-64
-            runner: ubuntu-latest
+            runner: '["self-hosted","Linux","X64","beast-unit"]'
             platform: linux-x64
           - target: windows-x86-64
-            runner: ubuntu-latest
+            runner: '["self-hosted","Linux","X64","beast-unit"]'
             packages: mingw-w64
             platform: windows-x64
           - target: android-arm64-v8a
-            runner: ubuntu-latest
+            runner: '["self-hosted","Linux","X64","beast-unit"]'
             ndk: true
             platform: android-arm64-v8a
           - target: android-armeabi-v7a
-            runner: ubuntu-latest
+            runner: '["self-hosted","Linux","X64","beast-unit"]'
             ndk: true
             platform: android-armeabi-v7a
           - target: android-x86_64
-            runner: ubuntu-latest
+            runner: '["self-hosted","Linux","X64","beast-unit"]'
             ndk: true
             platform: android-x86_64
           - target: wasm
-            runner: ubuntu-latest
+            runner: '["self-hosted","Linux","X64","beast-unit"]'
             emsdk: true
             platform: wasm
           - target: apple
-            runner: macos-latest
+            runner: '["self-hosted","macOS","ARM64","mac-mini"]'
             apple: true
             platform: apple
-    runs-on: ${{ matrix.runner }}
+    # A label set rather than an image name, so the matrix has to hand over an
+    # array - a bare string can only name one label.
+    runs-on: ${{ fromJSON(matrix.runner) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -109,7 +111,7 @@ jobs:
   publish:
     needs: build
     if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, beast-unit]
     steps:
       - uses: actions/checkout@v4
 
