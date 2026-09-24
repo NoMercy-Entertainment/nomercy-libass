@@ -65,7 +65,7 @@ share and rewrite `AndroidAssRenderer` against it, loading our `.so` from the
 APK's `jniLibs`. That deletes `ass-kt` from `gradle/libs.versions.toml` and
 leaves one renderer implementation instead of two.
 
-**Web — the wasm target.** `packages/nomercy-subtitle-octopus` and the vendored
+**Web — the wasm target.** `packages/subtitles/nomercy-subtitle-octopus` and the vendored
 `public/js/octopus/subtitles-octopus.js` go once the wasm artifact publishes;
 the video player links ours instead.
 
@@ -78,7 +78,7 @@ unchanged.
 `scripts/build-wasm-worker.sh` links the wasm build into
 `nomercy-libass-worker.js` + `.wasm`, exporting the libass entry points the
 NoMercy wrapper's worker bridge calls and preloading the fallback face at
-`/fonts`. The wrapper in `packages/nomercy-subtitle-octopus` keeps its API; only
+`/fonts`. The wrapper in `packages/subtitles/nomercy-subtitle-octopus` keeps its API; only
 the worker underneath it changes, so retiring SubtitlesOctopus is a three-file
 swap rather than a rewrite.
 

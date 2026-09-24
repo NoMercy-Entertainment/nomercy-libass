@@ -14,7 +14,7 @@
 # party in the subtitle path — a JavaScript port of libass whose version nobody
 # here chose and whose fixes arrive when someone else makes them.
 #
-# The NoMercy wrapper in packages/nomercy-subtitle-octopus stays: it owns the
+# The NoMercy wrapper in packages/subtitles/nomercy-subtitle-octopus stays: it owns the
 # API the video player calls. Only the worker underneath it changes, so the swap
 # is three files rather than a rewrite.
 set -euo pipefail
