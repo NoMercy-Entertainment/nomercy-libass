@@ -62,10 +62,21 @@ jobs:
         if: matrix.emsdk
         uses: mymindstorm/setup-emsdk@v14
 
+      # A pinned NDK, installed here. ANDROID_NDK_LATEST_HOME exists only on
+      # GitHub-hosted images; since the move to the self-hosted fleet it was
+      # empty, NDK_BIN became "/toolchains/..." and every Android build failed.
+      # r29 is the toolchain (clang 21) that built the v0.17.5-1 payloads.
       - name: ndk
         if: matrix.ndk
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r29
+          local-cache: true
+      - name: ndk path
+        if: matrix.ndk
         run: |
-          echo "NDK_BIN=$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_ENV"
+          echo "NDK_BIN=${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_ENV"
 
       - name: fetch sources
         run: bash scripts/fetch.sh
