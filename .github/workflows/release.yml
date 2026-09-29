@@ -78,7 +78,10 @@ jobs:
         uses: nttld/setup-ndk@v1
         with:
           ndk-version: r29
-          local-cache: true
+          # No local-cache: its copy keeps clang as an absolute link into
+          # /runner/work/_tool, which the self-hosted runner does not keep, so
+          # the restored NDK had a clang that pointed nowhere.
+          local-cache: false
       - name: ndk path
         if: matrix.ndk
         run: |
