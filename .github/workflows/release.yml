@@ -83,6 +83,14 @@ jobs:
         if: matrix.ndk
         run: |
           echo "NDK_BIN=${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_ENV"
+      # meson only says "Unknown compiler" when the NDK clang cannot run; this
+      # says why, before the build hides it.
+      - name: ndk sanity
+        if: matrix.ndk
+        run: |
+          ls -la "$NDK_BIN/aarch64-linux-android29-clang" "$NDK_BIN/clang" || true
+          "$NDK_BIN/clang" --version
+          "$NDK_BIN/aarch64-linux-android29-clang" --version
 
       - name: fetch sources
         run: bash scripts/fetch.sh
