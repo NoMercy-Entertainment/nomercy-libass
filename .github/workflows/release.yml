@@ -52,8 +52,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The Mac mini's runner service starts without /opt/homebrew/bin on PATH,
+      # so the brew fallback failed with "command not found" there.
       - name: toolchain
         run: |
+          if [ -d /opt/homebrew/bin ]; then
+            export PATH="/opt/homebrew/bin:$PATH"
+            echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+          fi
           sudo apt-get update -y || true
           sudo apt-get install -y meson ninja-build nasm ${{ matrix.packages }} || \
             brew install meson ninja nasm
