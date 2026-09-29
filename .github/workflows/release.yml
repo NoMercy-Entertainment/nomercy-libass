@@ -80,6 +80,11 @@ jobs:
             bash scripts/build-target.sh ${{ matrix.target }}
           fi
 
+      # A 4 KB-aligned Android library cannot load on a 16 KB-page device and
+      # makes Google Play refuse the app, so it never reaches a release.
+      - name: 16 KB pages
+        if: matrix.ndk
+        run: bash scripts/check-page-size.sh build/prefix/${{ matrix.target }}
       # A browser cannot load a static library. This links ours into the worker
       # the web player already has a wrapper for, which is what retires the
       # vendored SubtitlesOctopus build.
