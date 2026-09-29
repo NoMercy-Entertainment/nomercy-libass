@@ -52,8 +52,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The Mac mini's runner service starts without /opt/homebrew/bin on PATH,
+      # so the brew fallback failed with "command not found" there.
       - name: toolchain
         run: |
+          if [ -d /opt/homebrew/bin ]; then
+            export PATH="/opt/homebrew/bin:$PATH"
+            echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+          fi
           sudo apt-get update -y || true
           sudo apt-get install -y meson ninja-build nasm ${{ matrix.packages }} || \
             brew install meson ninja nasm
@@ -62,10 +68,32 @@ jobs:
         if: matrix.emsdk
         uses: mymindstorm/setup-emsdk@v14
 
+      # A pinned NDK, installed here. ANDROID_NDK_LATEST_HOME exists only on
+      # GitHub-hosted images; since the move to the self-hosted fleet it was
+      # empty, NDK_BIN became "/toolchains/..." and every Android build failed.
+      # r29 is the toolchain (clang 21) that built the v0.17.5-1 payloads.
       - name: ndk
         if: matrix.ndk
+        id: setup-ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r29
+          # No local-cache: its copy keeps clang as an absolute link into
+          # /runner/work/_tool, which the self-hosted runner does not keep, so
+          # the restored NDK had a clang that pointed nowhere.
+          local-cache: false
+      - name: ndk path
+        if: matrix.ndk
         run: |
-          echo "NDK_BIN=$ANDROID_NDK_LATEST_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_ENV"
+          echo "NDK_BIN=${{ steps.setup-ndk.outputs.ndk-path }}/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_ENV"
+      # meson only says "Unknown compiler" when the NDK clang cannot run; this
+      # says why, before the build hides it.
+      - name: ndk sanity
+        if: matrix.ndk
+        run: |
+          ls -la "$NDK_BIN/aarch64-linux-android29-clang" "$NDK_BIN/clang" || true
+          "$NDK_BIN/clang" --version
+          "$NDK_BIN/aarch64-linux-android29-clang" --version
 
       - name: fetch sources
         run: bash scripts/fetch.sh
@@ -80,6 +108,11 @@ jobs:
             bash scripts/build-target.sh ${{ matrix.target }}
           fi
 
+      # A 4 KB-aligned Android library cannot load on a 16 KB-page device and
+      # makes Google Play refuse the app, so it never reaches a release.
+      - name: 16 KB pages
+        if: matrix.ndk
+        run: bash scripts/check-page-size.sh build/prefix/${{ matrix.target }}
       # A browser cannot load a static library. This links ours into the worker
       # the web player already has a wrapper for, which is what retires the
       # vendored SubtitlesOctopus build.
