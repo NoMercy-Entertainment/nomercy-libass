@@ -27,9 +27,16 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
 # runnable". CI uses setup-emsdk, so taking the distro package here would mean
 # local and CI ran different compilers — which is the drift this repo exists to
 # end, reproduced inside its own tooling.
-RUN git clone --depth 1 https://github.com/emscripten-core/emsdk.git /opt/emsdk \
-    && /opt/emsdk/emsdk install latest \
-    && /opt/emsdk/emsdk activate latest
+#
+# The version comes from versions.env, the same line the workflow reads, so
+# the image and CI cannot pin two different compilers. "latest" is not a pin:
+# it moved from 6.0.6 to 6.0.10 between two green builds without anyone
+# choosing it.
+COPY versions.env /tmp/versions.env
+RUN . /tmp/versions.env \
+    && git clone --depth 1 https://github.com/emscripten-core/emsdk.git /opt/emsdk \
+    && /opt/emsdk/emsdk install "$EMSCRIPTEN_VERSION" \
+    && /opt/emsdk/emsdk activate "$EMSCRIPTEN_VERSION"
 
 ENV PATH="/opt/emsdk:/opt/emsdk/upstream/emscripten:/opt/emsdk/node/*/bin:${PATH}"
 ENV EM_CACHE=/tmp/emcache

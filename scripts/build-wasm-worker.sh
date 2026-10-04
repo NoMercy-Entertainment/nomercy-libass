@@ -27,6 +27,11 @@ DIST="$ROOT/build/dist/wasm"
 
 [ -d "$PREFIX/lib" ] || { echo "run scripts/build-target.sh wasm first" >&2; exit 2; }
 command -v emcc >/dev/null 2>&1 || { echo "emcc not on PATH" >&2; exit 2; }
+# The glue passes ass_render_frame a BigInt, so the compiler that links this
+# has to be the one versions.env pins (BigInt for 64-bit arguments is the
+# default since emscripten 4.0.0, and since 6.0.8 the WASM_BIGINT flag is
+# deprecated: it can only be turned off by -sWASM=0, which this never sets).
+bash "$ROOT/scripts/check-emsdk-pin.sh"
 
 mkdir -p "$DIST"
 

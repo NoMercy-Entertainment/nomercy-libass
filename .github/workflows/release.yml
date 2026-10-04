@@ -64,9 +64,24 @@ jobs:
           sudo apt-get install -y meson ninja-build nasm ${{ matrix.packages }} || \
             brew install meson ninja nasm
 
+      # The compiler is pinned in versions.env like every other source, and
+      # both this step and scripts/Dockerfile.build read it from there, so a
+      # local build and a release cannot link with two different emscriptens.
+      # Without a version input the action installs "latest", which moved
+      # from 6.0.6 to 6.0.10 between two green runs.
+      - name: emsdk version
+        if: matrix.emsdk
+        run: grep '^EMSCRIPTEN_VERSION=' versions.env >> "$GITHUB_ENV"
       - name: emsdk
         if: matrix.emsdk
         uses: mymindstorm/setup-emsdk@v16
+        with:
+          version: ${{ env.EMSCRIPTEN_VERSION }}
+      # Refuses the build before it links if the pin, the image, this file or
+      # the installed emcc disagree.
+      - name: emsdk pin
+        if: matrix.emsdk
+        run: bash scripts/check-emsdk-pin.sh
 
       # A pinned NDK, installed here. ANDROID_NDK_LATEST_HOME exists only on
       # GitHub-hosted images; since the move to the self-hosted fleet it was
