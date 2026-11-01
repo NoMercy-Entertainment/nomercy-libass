@@ -1,0 +1,27 @@
+[Script Info]
+; Synthetic fixture for the NoMercy golden ASS set. All text is made up.
+Title: multiple styles and fallback font
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+PlayResX: 1280
+PlayResY: 720
+YCbCr Matrix: None
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Sans,Arimo,48,&H00FFFFFF,&H000000FF,&H00101010,&H80000000,0,0,0,0,100,100,0,0,1,2.5,1.5,2,60,60,40,1
+Style: Mono,Cousine,44,&H00FFFFFF,&H000000FF,&H00101010,&H80000000,0,0,0,0,100,100,0,0,1,2.5,1.5,8,60,60,50,1
+Style: Serif,Gelasio,52,&H00FFFFFF,&H000000FF,&H00101010,&H80000000,0,0,0,0,100,100,0,0,1,2.5,1.5,5,60,60,40,1
+Style: Dej,DejaVu Sans,46,&H00FFFFFF,&H000000FF,&H00101010,&H80000000,0,0,0,0,100,100,0,0,1,2.5,1.5,1,60,60,60,1
+Style: Missing,No Such Face Anywhere,50,&H00FFFFFF,&H000000FF,&H00101010,&H80000000,0,0,0,0,100,100,0,0,1,2.5,1.5,3,60,60,60,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:10.00,Sans,,0,0,0,,Arimo default style
+Dialogue: 0,0:00:00.00,0:00:10.00,Mono,,0,0,0,,Cousine mono 0123456789
+Dialogue: 0,0:00:00.00,0:00:10.00,Serif,,0,0,0,,Gelasio serif centered
+Dialogue: 0,0:00:00.00,0:00:10.00,Dej,,0,0,0,,DejaVu Sans bottom left
+Dialogue: 0,0:00:00.00,0:00:10.00,Missing,,0,0,0,,Missing family falls back
+Dialogue: 1,0:00:03.00,0:00:08.00,Sans,,0,0,0,,{\fnCousine\an4\pos(60,420)}inline font override {\fnGelasio}then another
+Dialogue: 1,0:00:05.00,0:00:10.00,Dej,,0,0,0,,{\an6\pos(1220,300)}accents: éèüñ ß — “quotes”

@@ -1,0 +1,24 @@
+[Script Info]
+; Synthetic fixture for the NoMercy golden ASS set. All text is made up.
+Title: track full
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+PlayResX: 1280
+PlayResY: 720
+YCbCr Matrix: None
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arimo,48,&H00FFFFFF,&H000000FF,&H00101010,&H80000000,0,0,0,0,100,100,0,0,1,2.5,1.5,2,60,60,40,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:01.10,Default,,0,0,0,,Good morning, captain.\Nsecond line of the same cue
+Dialogue: 0,0:00:01.20,0:00:02.30,Default,,0,0,0,,The boat is ready at the pier.
+Dialogue: 0,0:00:02.40,0:00:03.50,Default,,0,0,0,,We sail when the fog lifts.
+Dialogue: 0,0:00:03.60,0:00:04.70,Default,,0,0,0,,Check the ropes twice.\Nsecond line of the same cue
+Dialogue: 0,0:00:04.80,0:00:05.90,Default,,0,0,0,,Did anyone bring the lamp?
+Dialogue: 0,0:00:06.00,0:00:07.10,Default,,0,0,0,,It is in the cabin.
+Dialogue: 0,0:00:07.20,0:00:08.30,Default,,0,0,0,,Then we have everything.\Nsecond line of the same cue
+Dialogue: 0,0:00:08.40,0:00:09.50,Default,,0,0,0,,Hold on tight, here we go.

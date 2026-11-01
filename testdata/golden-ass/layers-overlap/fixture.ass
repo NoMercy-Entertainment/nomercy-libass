@@ -1,0 +1,25 @@
+[Script Info]
+; Synthetic fixture for the NoMercy golden ASS set. All text is made up.
+Title: overlapping events and layers
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+PlayResX: 1280
+PlayResY: 720
+YCbCr Matrix: None
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: L,Arimo,60,&H00FFFFFF,&H000000FF,&H00101010,&H80000000,0,0,0,0,100,100,0,0,1,2.5,1.5,2,60,60,40,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:10.00,L,,0,0,0,,{\an7\pos(300,150)\1c&H0000FF&\1a&H40&\bord0\shad0\p1}m 0 0 l 220 0 220 160 0 160{\p0}
+Dialogue: 1,0:00:00.00,0:00:10.00,L,,0,0,0,,{\an7\pos(380,210)\1c&H00FF00&\1a&H40&\bord0\shad0\p1}m 0 0 l 220 0 220 160 0 160{\p0}
+Dialogue: 2,0:00:02.00,0:00:10.00,L,,0,0,0,,{\an7\pos(460,270)\1c&HFF0000&\1a&H40&\bord0\shad0\p1}m 0 0 l 220 0 220 160 0 160{\p0}
+Dialogue: 3,0:00:00.00,0:00:10.00,L,,0,0,0,,{\an5\pos(440,300)\fs36}layer 3 text above
+Dialogue: 3,0:00:00.00,0:00:10.00,L,,0,0,0,,{\an5\pos(460,320)\fs36\c&H00FFFF&}layer 3 second
+Dialogue: 0,0:00:04.00,0:00:08.00,L,,0,0,0,,{\an5\pos(440,420)\fs36}overlap in time
+Dialogue: 0,0:00:05.00,0:00:09.00,L,,0,0,0,,{\an5\pos(440,430)\fs36\c&H00FF00&}overlap in time
+Dialogue: 5,0:00:00.00,0:00:10.00,L,,0,0,0,,{\an2\move(300,690,980,690)\fs36}collision test moving
+Dialogue: 5,0:00:00.00,0:00:10.00,L,,0,0,0,,{\an2\fs36}collision test static bottom

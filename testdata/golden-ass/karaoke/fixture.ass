@@ -1,0 +1,20 @@
+[Script Info]
+; Synthetic fixture for the NoMercy golden ASS set. All text is made up.
+Title: karaoke
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+PlayResX: 1280
+PlayResY: 720
+YCbCr Matrix: None
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: K,Arimo,64,&H0000FFFF,&H00FFFFFF,&H00402000,&H80000000,0,0,0,0,100,100,0,0,1,3,1.5,2,60,60,40,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:03.30,K,,0,0,0,,{\k40}Row{\k40} row{\k40} row{\k40} your{\k60} boat{\k80} gent{\k60}ly
+Dialogue: 0,0:00:03.30,0:00:06.60,K,,0,0,0,,{\kf50}Down{\kf50} the{\kf90} stream{\kf40} mer{\kf40}ri{\kf40}ly
+Dialogue: 0,0:00:06.60,0:00:10.00,K,,0,0,0,,{\ko60}Life{\ko60} is{\ko80} but{\ko100} a{\ko100} dream
+Dialogue: 1,0:00:00.00,0:00:10.00,K,,0,0,0,,{\an8\pos(640,60)\fs28\k100}top{\k100} line{\k100} that{\k100} runs{\k100} the{\k100} whole{\k100} clip

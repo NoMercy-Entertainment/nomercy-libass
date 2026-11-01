@@ -1,0 +1,18 @@
+[Script Info]
+; Synthetic fixture for the NoMercy golden ASS set. All text is made up.
+Title: track forced
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+PlayResX: 1280
+PlayResY: 720
+YCbCr Matrix: None
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Forced,Arimo,52,&H00FFFFFF,&H000000FF,&H00101010,&H80000000,1,0,0,0,100,100,0,0,1,2.5,1.5,2,60,60,40,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:01.00,0:00:03.50,Forced,,0,0,0,,Forced: the sign reads CLOSED.
+Dialogue: 0,0:00:05.00,0:00:08.00,Forced,,0,0,0,,Forced: a foreign phrase.

@@ -1,0 +1,22 @@
+[Script Info]
+; Synthetic fixture for the NoMercy golden ASS set. All text is made up.
+Title: track sdh
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+PlayResX: 1280
+PlayResY: 720
+YCbCr Matrix: None
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arimo,48,&H00FFFFFF,&H000000FF,&H00101010,&H80000000,0,0,0,0,100,100,0,0,1,2.5,1.5,2,60,60,40,1
+Style: Sdh,Cousine,42,&H00D0FFD0,&H000000FF,&H00101010,&H80000000,0,1,0,0,100,100,0,0,1,2.5,1.5,2,60,60,40,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:02.50,Sdh,,0,0,0,,[gentle waves]
+Dialogue: 0,0:00:01.50,0:00:05.00,Default,,0,0,0,,CAPTAIN: Raise the sail.
+Dialogue: 1,0:00:03.00,0:00:06.50,Sdh,,0,0,110,,[rope creaking]
+Dialogue: 0,0:00:05.50,0:00:08.00,Sdh,,0,0,0,,♪ soft harbor music ♪
+Dialogue: 0,0:00:07.50,0:00:10.00,Default,,0,0,0,,MATE: [whispering] Quiet now.

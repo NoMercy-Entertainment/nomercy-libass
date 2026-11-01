@@ -1,0 +1,22 @@
+[Script Info]
+; Synthetic fixture for the NoMercy golden ASS set. All text is made up.
+Title: transform
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+PlayResX: 1280
+PlayResY: 720
+YCbCr Matrix: None
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arimo,56,&H00FFFFFF,&H000000FF,&H00101010,&H80000000,0,0,0,0,100,100,0,0,1,2.5,1.5,2,60,60,40,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\an5\pos(640,120)\c&HFFFFFF&\t(0,5000,\c&H0000FF&)\t(5000,10000,\c&H00FF00&)}color shift
+Dialogue: 1,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\an5\pos(640,240)\fscx50\fscy50\t(0,10000,\fscx150\fscy150)}scale up
+Dialogue: 2,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\an5\pos(640,360)\blur0\bord1\t(0,10000,\blur8\bord6)}blur and border
+Dialogue: 3,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\an5\pos(640,480)\alpha&HFF&\t(0,5000,\alpha&H00&)\t(5000,10000,\alpha&HFF&)}alpha in and out
+Dialogue: 4,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\an5\pos(640,600)\fad(1500,1500)\fry0\t(0,10000,\fry360)}fade and fry rotation
+Dialogue: 5,0:00:00.00,0:00:10.00,Default,,0,0,0,,{\an5\pos(1100,360)\frz0\t(0,10000,\frz-720)\fs40}spin
