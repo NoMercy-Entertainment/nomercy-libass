@@ -234,12 +234,12 @@ test('one ImageData serves every frame of the same size and is recreated on resi
 	assert.equal(worker.context.created.length, 2);
 });
 
-test('only the union of the previous and the new bounding box is uploaded', async () => {
+test('every upload is the whole frame at the origin, with no dirty rectangle', async () => {
 	const worker = await makeWorker({ frames: [{ changed: 2, images: [RED, BLUE] }, { changed: 2, images: [GREEN] }] });
 	await worker.time(1000);
 	await worker.time(1016);
-	assert.deepEqual(worker.context.puts[0].args, [0, 0, 4, 2, 22, 13]);
-	assert.deepEqual(worker.context.puts[1].args, [0, 0, 4, 2, 30, 22]);
+	assert.deepEqual(worker.context.puts[0].args, [0, 0]);
+	assert.deepEqual(worker.context.puts[1].args, [0, 0]);
 });
 
 test('the pixels equal the old full-frame composite, including after content goes away', async () => {
@@ -251,9 +251,10 @@ test('the pixels equal the old full-frame composite, including after content goe
 	}
 });
 
-test('a frame with no images after drawn content clears the old box', async () => {
+test('a frame with no images after drawn content uploads a cleared frame', async () => {
 	const worker = await makeWorker({ frames: [{ changed: 2, images: [RED] }, { changed: 2, images: [] }] });
 	await worker.time(1000);
 	await worker.time(1016);
-	assert.deepEqual(worker.context.puts[1].args, [0, 0, 4, 2, 8, 4]);
+	assert.deepEqual(worker.context.puts[1].args, [0, 0]);
+	assert.ok(worker.context.puts[1].pixels.every(byte => byte === 0));
 });
