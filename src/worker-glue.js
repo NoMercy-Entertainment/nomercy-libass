@@ -33,10 +33,25 @@ let canvas = null;
 let context = null;
 let fontsAttached = 0;
 
+// Where ass_render_frame writes whether the picture changed: 0 none, 1 only
+// positions, 2 content. Allocated once, because a malloc per frame is a leak.
+let detectChange = 0;
+// The canvas mirror: what the last upload left on the canvas. Kept between
+// frames so only the boxes that changed are cleared and sent.
+let frame = null;
+let drawnBox = null;
+// True when the canvas no longer matches what libass last reported (new size,
+// new track, cleared), so "unchanged" cannot be trusted for the next frame.
+let mustDraw = true;
+let pendingTime = null;
+let flushScheduled = false;
+let probe = false;
+let dropped = 0;
+
 // libass packs a colour as 0xRRGGBBAA and its alpha is INVERSE: 0 is opaque.
 // Reading it the other way around renders every sign as a solid block, which
 // looks like a broken renderer rather than a misread byte.
-function blend(target, image, width) {
+function blend(target, image, width, height) {
 	const bitmapW = image.w;
 	const bitmapH = image.h;
 	const stride = image.stride;
@@ -48,8 +63,13 @@ function blend(target, image, width) {
 	if (opacity <= 0)
 		return;
 
-	for (let y = 0; y < bitmapH; y++) {
-		for (let x = 0; x < bitmapW; x++) {
+	const xStart = Math.max(0, -image.dstX);
+	const xEnd = Math.min(bitmapW, width - image.dstX);
+	const yStart = Math.max(0, -image.dstY);
+	const yEnd = Math.min(bitmapH, height - image.dstY);
+
+	for (let y = yStart; y < yEnd; y++) {
+		for (let x = xStart; x < xEnd; x++) {
 			const coverage = api.HEAPU8[image.bitmap + y * stride + x];
 			if (coverage === 0)
 				continue;
@@ -82,35 +102,107 @@ function readImage(pointer) {
 	};
 }
 
+function boundsOf(images, width, height) {
+	let box = null;
+	for (const image of images) {
+		const left = Math.max(0, image.dstX);
+		const top = Math.max(0, image.dstY);
+		const right = Math.min(width, image.dstX + image.w);
+		const bottom = Math.min(height, image.dstY + image.h);
+		if (right <= left || bottom <= top)
+			continue;
+		box = unionOf(box, { left, top, right, bottom });
+	}
+	return box;
+}
+
+function unionOf(a, b) {
+	if (!a)
+		return b;
+	if (!b)
+		return a;
+	return {
+		left: Math.min(a.left, b.left),
+		top: Math.min(a.top, b.top),
+		right: Math.max(a.right, b.right),
+		bottom: Math.max(a.bottom, b.bottom),
+	};
+}
+
+function measured(started, drew) {
+	if (probe)
+		postMessage({ type: 'nm:probe', renderMs: performance.now() - started, drew, dropped });
+}
+
 function render(timeMs) {
 	if (!renderer || !track || !context)
 		return;
+
+	const started = probe ? performance.now() : 0;
 
 	// BigInt, because ass_render_frame takes the timestamp as long long and
 	// emscripten maps a 64-bit argument to BigInt. A plain number throws
 	// "Cannot convert 11000 to a BigInt" from inside the module, which reads as
 	// a broken build rather than a wrong argument type.
-	const first = api._ass_render_frame(renderer, track, BigInt(Math.round(timeMs)), 0);
-	const frame = context.createImageData(canvas.width, canvas.height);
+	const first = api._ass_render_frame(renderer, track, BigInt(Math.round(timeMs)), detectChange);
 
-	let pointer = first >>> 0;
-	let drawn = 0;
-	while (pointer !== 0) {
-		const image = readImage(pointer);
-		blend(frame.data, image, canvas.width);
-		pointer = image.next;
-		drawn++;
+	if (api.HEAP32[detectChange >> 2] === 0 && !mustDraw) {
+		measured(started, false);
+		return 0;
 	}
 
-	context.putImageData(frame, 0, 0);
+	const width = canvas.width;
+	const height = canvas.height;
+	if (!frame || frame.width !== width || frame.height !== height) {
+		frame = context.createImageData(width, height);
+		drawnBox = null;
+	}
+
+	const images = [];
+	let pointer = first >>> 0;
+	while (pointer !== 0) {
+		const image = readImage(pointer);
+		images.push(image);
+		pointer = image.next;
+	}
+
+	const dirty = unionOf(drawnBox, boundsOf(images, width, height));
+	mustDraw = false;
+	if (!dirty) {
+		measured(started, false);
+		return 0;
+	}
+
+	for (let y = dirty.top; y < dirty.bottom; y++)
+		frame.data.fill(0, (y * width + dirty.left) * 4, (y * width + dirty.right) * 4);
+	for (const image of images)
+		blend(frame.data, image, width, height);
+
+	context.putImageData(frame, 0, 0, dirty.left, dirty.top, dirty.right - dirty.left, dirty.bottom - dirty.top);
+	drawnBox = boundsOf(images, width, height);
 
 	// Reported, because the canvas belongs to the worker once it is transferred
 	// and nothing on the main thread can read a pixel back. Without this the
 	// difference between "composited four bitmaps" and "drew nothing" is
 	// invisible to everything above, which is how a blank overlay gets called a
 	// timing problem.
-	postMessage({ type: 'nm:rendered', count: drawn, timeMs });
-	return drawn;
+	postMessage({ type: 'nm:rendered', count: images.length, timeMs });
+	measured(started, true);
+	return images.length;
+}
+
+// Time requests that queued up behind a slow frame are all stale but the last:
+// rendering each in turn is how a heavy sign falls further behind the video.
+function flushTime() {
+	flushScheduled = false;
+	const timeMs = pendingTime;
+	pendingTime = null;
+	try {
+		render(timeMs);
+	}
+	catch (error) {
+		fail(error);
+	}
 }
 
 function fail(error) {
@@ -129,6 +221,7 @@ function attachFont(name, bytes) {
 }
 
 function loadTrack(content) {
+	mustDraw = true;
 	if (track)
 		api._ass_free_track(track);
 
@@ -145,6 +238,9 @@ function loadTrack(content) {
 function sizeTo(width, height) {
 	canvas.width = width;
 	canvas.height = height;
+	frame = null;
+	drawnBox = null;
+	mustDraw = true;
 	api._ass_set_frame_size(renderer, width, height);
 	api._ass_set_storage_size(renderer, width, height);
 }
@@ -167,6 +263,8 @@ const handlers = {
 		api.ccall('ass_set_fonts', null, ['number', 'string', 'string', 'number', 'number', 'number'], [renderer, '/fonts/default.ttf', 'sans-serif', 0, 0, 1]);
 		api._ass_set_cache_limits(renderer, msg.glyphCacheMax || 0, msg.bitmapCacheMegabytes || 0);
 
+		detectChange = api._malloc(4);
+		probe = Boolean(msg.probe);
 		canvas = msg.canvas;
 		context = canvas.getContext('2d');
 		sizeTo(msg.width, msg.height);
@@ -191,7 +289,13 @@ const handlers = {
 	},
 
 	'nm:time': (msg) => {
-		render(msg.timeMs);
+		if (pendingTime !== null)
+			dropped++;
+		pendingTime = msg.timeMs;
+		if (!flushScheduled) {
+			flushScheduled = true;
+			setTimeout(flushTime, 0);
+		}
 	},
 
 	'nm:free': () => {
@@ -199,8 +303,12 @@ const handlers = {
 			api._ass_free_track(track);
 			track = 0;
 		}
-		if (context)
+		if (context) {
 			context.clearRect(0, 0, canvas.width, canvas.height);
+			frame = null;
+			drawnBox = null;
+			mustDraw = true;
+		}
 	},
 };
 
