@@ -51,7 +51,7 @@ function layoutImages(api, images) {
 }
 
 // What libass hands back for each call, in order: { changed, images }.
-function makeWorker({ frames = [], probe = false } = {}) {
+function makeWorker({ frames = [], probe = false, bitmaps = false } = {}) {
 	const buffer = new ArrayBuffer(1 << 16);
 	let brk = 64;
 	const renderCalls = [];
@@ -100,11 +100,31 @@ function makeWorker({ frames = [], probe = false } = {}) {
 	const canvas = { width: 0, height: 0, getContext: () => context };
 
 	const posted = [];
+	const transfers = [];
 	const timers = [];
+	const offscreens = [];
 	let clock = 0;
 	const sandbox = {
 		self: {},
-		postMessage: message => posted.push(message),
+		postMessage: (message, list) => {
+			posted.push(message);
+			transfers.push(list ?? []);
+		},
+		OffscreenCanvas: class {
+			constructor(width, height) {
+				this.width = width;
+				this.height = height;
+				offscreens.push(this);
+			}
+
+			getContext() {
+				return context;
+			}
+
+			transferToImageBitmap() {
+				return { bitmap: true, puts: context.puts.length };
+			}
+		},
 		NoMercyLibass: async () => api,
 		setTimeout: (fn) => {
 			timers.push(fn);
@@ -124,6 +144,8 @@ function makeWorker({ frames = [], probe = false } = {}) {
 		context,
 		canvas,
 		posted,
+		transfers,
+		offscreens,
 		renderCalls,
 		async send(message) {
 			await sandbox.self.onmessage({ data: message });
@@ -138,7 +160,10 @@ function makeWorker({ frames = [], probe = false } = {}) {
 		},
 		of: type => posted.filter(message => message.type === type),
 	};
-	return worker.send({ type: 'nm:init', canvas, width: WIDTH, height: HEIGHT, probe })
+	const init = bitmaps
+		? { type: 'nm:init', width: WIDTH, height: HEIGHT, probe }
+		: { type: 'nm:init', canvas, width: WIDTH, height: HEIGHT, probe };
+	return worker.send(init)
 		.then(() => worker.send({ type: 'nm:track', content: '[Script Info]' }))
 		.then(() => worker);
 }
@@ -257,4 +282,59 @@ test('a frame with no images after drawn content uploads a cleared frame', async
 	await worker.time(1016);
 	assert.deepEqual(worker.context.puts[1].args, [0, 0]);
 	assert.ok(worker.context.puts[1].pixels.every(byte => byte === 0));
+});
+
+// Bitmap mode: no canvas is transferred; each nm:frame request is answered with an ImageBitmap.
+const frameRequest = (timeMs, seq = 1, epoch = 1) => ({ type: 'nm:frame', timeMs, seq, epoch });
+
+test('bitmap mode makes its own offscreen canvas of the given size and posts nm:ready', async () => {
+	const worker = await makeWorker({ bitmaps: true });
+	assert.equal(worker.offscreens.length, 1);
+	assert.deepEqual([worker.offscreens[0].width, worker.offscreens[0].height], [WIDTH, HEIGHT]);
+	assert.equal(worker.of('nm:ready').length, 1);
+});
+
+test('nm:frame renders every request in order and never coalesces', async () => {
+	const worker = await makeWorker({ bitmaps: true, frames: [{ changed: 2, images: [RED] }] });
+	for (let i = 0; i < 60; i++)
+		await worker.send(frameRequest(1000 + i * 42, i));
+	assert.equal(worker.renderCalls.length, 60);
+	assert.deepEqual(worker.renderCalls.map(call => call.time), Array.from({ length: 60 }, (_, i) => 1000 + i * 42));
+	assert.equal(worker.of('nm:frame').length, 60);
+});
+
+test('a drawn frame is answered with a transferred bitmap carrying its time, seq and epoch', async () => {
+	const worker = await makeWorker({ bitmaps: true, frames: [{ changed: 2, images: [RED] }] });
+	await worker.send(frameRequest(1042, 7, 3));
+	const [reply] = worker.of('nm:frame');
+	assert.equal(reply.result, 'drawn');
+	assert.deepEqual([reply.timeMs, reply.seq, reply.epoch], [1042, 7, 3]);
+	assert.equal(reply.bitmap.bitmap, true);
+	const list = worker.transfers[worker.posted.indexOf(reply)];
+	assert.equal(list.length, 1);
+	assert.equal(list[0], reply.bitmap);
+});
+
+test('an unchanged frame is answered "same" and an image-free frame "empty", both without a bitmap', async () => {
+	const worker = await makeWorker({ bitmaps: true, frames: [{ changed: 2, images: [RED] }, { changed: 0, images: [RED] }, { changed: 2, images: [] }] });
+	await worker.send(frameRequest(1000, 1));
+	await worker.send(frameRequest(1042, 2));
+	await worker.send(frameRequest(1084, 3));
+	const replies = worker.of('nm:frame');
+	assert.deepEqual(replies.map(r => r.result), ['drawn', 'same', 'empty']);
+	assert.equal(replies[1].bitmap, undefined);
+	assert.equal(replies[2].bitmap, undefined);
+});
+
+test('a forced frame draws again even when libass reports no change', async () => {
+	const worker = await makeWorker({ bitmaps: true, frames: [{ changed: 2, images: [RED] }, { changed: 0, images: [RED] }] });
+	await worker.send(frameRequest(1000, 1));
+	await worker.send({ ...frameRequest(1042, 2), force: true });
+	assert.deepEqual(worker.of('nm:frame').map(r => r.result), ['drawn', 'drawn']);
+});
+
+test('the pixels in bitmap mode equal the full-frame composite', async () => {
+	const worker = await makeWorker({ bitmaps: true, frames: [{ changed: 2, images: [RED, BLUE] }] });
+	await worker.send(frameRequest(1000));
+	assert.deepEqual(worker.context.puts[0].pixels, reference([RED, BLUE]));
 });
