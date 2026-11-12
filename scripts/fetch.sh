@@ -66,7 +66,7 @@ fetch libass "$LIBASS_VERSION" "$LIBASS_SHA256" \
     "https://github.com/libass/libass/releases/download/$LIBASS_VERSION/libass-$LIBASS_VERSION.tar.gz"
 
 fetch freetype "$FREETYPE_VERSION" "$FREETYPE_SHA256" \
-    "https://github.com/freetype/freetype/archive/refs/tags/VER-2-13-3.tar.gz"
+    "https://github.com/freetype/freetype/archive/refs/tags/VER-${FREETYPE_VERSION//./-}.tar.gz"
 
 fetch fribidi "$FRIBIDI_VERSION" "$FRIBIDI_SHA256" \
     "https://github.com/fribidi/fribidi/releases/download/v$FRIBIDI_VERSION/fribidi-$FRIBIDI_VERSION.tar.xz"
