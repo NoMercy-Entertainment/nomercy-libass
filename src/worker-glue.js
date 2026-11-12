@@ -82,10 +82,13 @@ function blend(target, image, width, height) {
 			const at = ((image.dstY + y) * width + (image.dstX + x)) * 4;
 			const inverse = 1 - alpha;
 
-			target[at] = r * alpha + target[at] * inverse;
-			target[at + 1] = g * alpha + target[at + 1] * inverse;
-			target[at + 2] = b * alpha + target[at + 2] * inverse;
-			target[at + 3] = 255 * alpha + target[at + 3] * inverse;
+			// ImageData is straight alpha: weight the old color by the old alpha, divide by the new one.
+			const old = target[at + 3] / 255;
+			const out = alpha + old * inverse;
+			target[at] = (r * alpha + target[at] * old * inverse) / out;
+			target[at + 1] = (g * alpha + target[at + 1] * old * inverse) / out;
+			target[at + 2] = (b * alpha + target[at + 2] * old * inverse) / out;
+			target[at + 3] = 255 * out;
 		}
 	}
 }
