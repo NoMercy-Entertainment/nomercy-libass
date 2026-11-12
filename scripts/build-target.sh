@@ -89,7 +89,9 @@ meson_build fribidi -Ddefault_library=static -Dwerror=false -Ddocs=false -Dbin=f
 # actually stops our pinned version breaking the day a toolchain updates, which
 # is the reproducibility this repo exists for. Nothing of ours compiles here, so
 # no warning of ours is silenced.
-meson_build harfbuzz -Ddefault_library=static -Dwerror=false -Dcpp_args=-DHB_NO_PRAGMA_GCC_DIAGNOSTIC_ERROR -Dfreetype=enabled -Dglib=disabled -Dgobject=disabled -Dcairo=disabled -Dtests=disabled -Ddocs=disabled
+# HarfBuzz 15 turns its GPU library and command-line tools on by default; libass needs
+# neither, and the GPU library wants an Objective-C++ compiler on Apple targets.
+meson_build harfbuzz -Ddefault_library=static -Dwerror=false -Dcpp_args=-DHB_NO_PRAGMA_GCC_DIAGNOSTIC_ERROR -Dfreetype=enabled -Dglib=disabled -Dgobject=disabled -Dcairo=disabled -Dgpu=disabled -Dutilities=disabled -Dtests=disabled -Ddocs=disabled
 # No system font provider, and that is deliberate rather than a concession.
 #
 # libass insists on DirectWrite, Core Text or Fontconfig unless told otherwise,
