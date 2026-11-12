@@ -13,6 +13,9 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     timeout-minutes: 7200
@@ -75,7 +78,7 @@ jobs:
         run: grep '^EMSCRIPTEN_VERSION=' versions.env >> "$GITHUB_ENV"
       - name: emsdk
         if: matrix.emsdk
-        uses: mymindstorm/setup-emsdk@v16
+        uses: mymindstorm/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
         with:
           version: ${{ env.EMSCRIPTEN_VERSION }}
       # Refuses the build before it links if the pin, the image, this file or
@@ -91,7 +94,7 @@ jobs:
       - name: ndk
         if: matrix.ndk
         id: setup-ndk
-        uses: nttld/setup-ndk@v1
+        uses: nttld/setup-ndk@ed92fe6cadad69be94a966a7ee3271275e62f779 # v1
         with:
           ndk-version: r29
           # No local-cache: its copy keeps clang as an absolute link into
@@ -161,6 +164,8 @@ jobs:
     timeout-minutes: 7200
     needs: build
     if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
     runs-on: [self-hosted, Linux, X64, beast-unit]
     steps:
       - uses: actions/checkout@v7.0.1
@@ -186,7 +191,7 @@ jobs:
           echo "tag and payload agree: $actual"
 
       - uses: actions/download-artifact@v8.0.1
-      - uses: softprops/action-gh-release@v3.0.3
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: 'libass-*/*.tar.gz'
           fail_on_unmatched_files: true
