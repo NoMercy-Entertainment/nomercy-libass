@@ -180,10 +180,14 @@ function reference(images) {
 			for (let x = 0; x < image.w; x++) {
 				const alpha = (image.coverage / 255) * opacity;
 				const at = ((image.y + y) * WIDTH + (image.x + x)) * 4;
-				data[at] = r * alpha + data[at] * (1 - alpha);
-				data[at + 1] = g * alpha + data[at + 1] * (1 - alpha);
-				data[at + 2] = b * alpha + data[at + 2] * (1 - alpha);
-				data[at + 3] = 255 * alpha + data[at + 3] * (1 - alpha);
+				// ImageData is straight alpha: weight the old color by the old alpha, divide by the new one.
+				const inverse = 1 - alpha;
+				const old = data[at + 3] / 255;
+				const out = alpha + old * inverse;
+				data[at] = (r * alpha + data[at] * old * inverse) / out;
+				data[at + 1] = (g * alpha + data[at + 1] * old * inverse) / out;
+				data[at + 2] = (b * alpha + data[at + 2] * old * inverse) / out;
+				data[at + 3] = 255 * out;
 			}
 		}
 	}
@@ -274,6 +278,14 @@ test('the pixels equal the old full-frame composite, including after content goe
 		await worker.time(1000 + i * 16);
 		assert.deepEqual(worker.context.puts[i].pixels, reference(sequence[i]), `frame ${i}`);
 	}
+});
+
+test('half-coverage white on an empty frame keeps full white and carries the coverage in alpha', async () => {
+	const edge = { x: 4, y: 2, w: 2, h: 2, color: 0xFFFFFF00, coverage: 128 };
+	const worker = await makeWorker({ frames: [{ changed: 2, images: [edge] }] });
+	await worker.time(1000);
+	const at = (2 * WIDTH + 4) * 4;
+	assert.deepEqual([...worker.context.puts[0].pixels.slice(at, at + 4)], [255, 255, 255, 128]);
 });
 
 test('a frame with no images after drawn content uploads a cleared frame', async () => {
